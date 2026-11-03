@@ -1,4 +1,4 @@
-# 🥗 NutriGenix — AI-Powered Nutrition & Diet Platform
+NutriGenix — AI-Powered Nutrition & Diet Platform
 
 An all-in-one, AI-powered diet and nutrition web app built for **Pakistani eating habits**. NutriGenix helps users track calories and water, calculate BMI/TDEE, generate personalized 7-day diet plans, and get real-time dietary advice from an AI chatbot.
 
@@ -6,24 +6,24 @@ An all-in-one, AI-powered diet and nutrition web app built for **Pakistani eatin
 
 ---
 
-## 📌 Problem
+ Problem
 
 Most popular nutrition apps (MyFitnessPal, Cronometer, HealthifyMe) focus on Western diets and have little or no data for Pakistani foods like Biryani, Roti, Daal, or Karahi. Pakistan also has a very high rate of diabetes, obesity, hypertension, and PCOS. NutriGenix fills this gap with culturally relevant, free-to-use nutrition tools.
 
-## ✨ Features
+Features
 
-- 🔐 **Authentication** – register, login, logout (Django auth + signals)
-- 📊 **Dashboard** – calories vs. goal, water intake, BMI, TDEE, weekly calorie chart, macro doughnut chart (Chart.js)
-- 🍛 **Food Log** – search 55+ Pakistani foods, log meals (Breakfast / Lunch / Dinner / Snack), delete entries
-- ⚖️ **BMI & TDEE Calculator** – uses the Mifflin-St Jeor equation, with goal-based calorie adjustment
-- 💧 **Water Tracker** – circular progress indicator, quick-add buttons, daily log
-- 🤖 **AI Chatbot** – powered by Groq API (Llama 3.1-8B-Instant) with a rule-based fallback
-- 📅 **7-Day Diet Plan Generator** – personalized plan using a greedy calorie allocation algorithm
-- 🩺 **Health Condition Filters** – Diabetes, PCOS, Hypertension, Thyroid
-- 👤 **Profile Management** – measurements, activity level, goals, water goal
-- 💳 **Premium Subscription (Demo)** – freemium model with demo payment gateway
+Authentication – register, login, logout (Django auth + signals)
+Dashboard – calories vs. goal, water intake, BMI, TDEE, weekly calorie chart, macro doughnut chart (Chart.js)
+ Food Log– search 55+ Pakistani foods, log meals (Breakfast / Lunch / Dinner / Snack), delete entries
+BMI & TDEE Calculator – uses the Mifflin-St Jeor equation, with goal-based calorie adjustment
+Water Tracker – circular progress indicator, quick-add buttons, daily log
+AI Chatbot – powered by Groq API (Llama 3.1-8B-Instant) with a rule-based fallback
+7-Day Diet Plan Generator – personalized plan using a greedy calorie allocation algorithm
+Health Condition Filters – Diabetes, PCOS, Hypertension, Thyroid
+Profile Management – measurements, activity level, goals, water goal
+Premium Subscription (Demo) – freemium model with demo payment gateway
 
-## 🛠️ Tech Stack
+ Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -33,22 +33,6 @@ Most popular nutrition apps (MyFitnessPal, Cronometer, HealthifyMe) focus on Wes
 | Charts | Chart.js |
 | Database | SQLite (development) |
 | Version Control | Git + GitHub |
-
-## 📸 Screenshots
-
-> Add your screenshots in a `screenshots/` folder and update the file names below.
-
-| Dashboard | Food Log |
-|---|---|
-| ![Dashboard](screenshots/dashboard.png) | ![Food Log](screenshots/food-log.png) |
-
-| BMI & TDEE Calculator | Water Tracker |
-|---|---|
-| ![Calculator](screenshots/calculator.png) | ![Water](screenshots/water.png) |
-
-| Profile | Pricing |
-|---|---|
-| ![Profile](screenshots/profile.png) | ![Pricing](screenshots/pricing.png) |
 
 ## 🚀 Getting Started
 
@@ -107,9 +91,8 @@ python manage.py runserver
 
 Open **http://127.0.0.1:8000** in your browser.
 
-## 🧮 Algorithms Used
-
-| Algorithm | Purpose | Complexity |
+Algorithms Used
+Algorithm  Purpose  Complexity 
 |---|---|---|
 | Mifflin-St Jeor equation | BMR calculation | O(1) |
 | BMI formula (WHO) | BMI and category | O(1) |
@@ -119,26 +102,19 @@ Open **http://127.0.0.1:8000** in your browser.
 | Q-object search | Multi-field food search (max 20 results) | O(n) |
 | Django signals | Auto-create profiles, update water summaries | — |
 
-## 🗂️ Database Models
+Database Models
 
 `UserProfile` · `FoodItem` · `MealLog` · `DietPlan` · `DietPlanMeal` · `WaterLog` · `WaterDailySummary` · `ChatSession` · `ChatMessage`
 
-## 🔮 Future Work
+Future Work
 
 - Mobile app
 - Wearable device integration
 - Micronutrient data in the food database
 - Real payment integration (Easypaisa, JazzCash)
 
-## 👥 Team
-
-- **Hafiza Wajeeha**
-- **Yusra Sehar**
-- **Amal Masood**
-- **Abdullah Zubair**
-
 Supervised by **Sir Tauseef**, Department of Computer Science, University of South Asia.
 
-## ⚠️ Disclaimer
+Disclaimer
 
 NutriGenix provides general nutrition information and is not a substitute for professional medical advice. Consult a doctor or registered dietitian for health conditions.
