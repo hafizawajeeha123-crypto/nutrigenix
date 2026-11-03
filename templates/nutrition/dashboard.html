@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — NutriGenix{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block content %}
+<div class="dashboard-wrapper">
+  <div class="dash-content">
+
+    <!-- Welcome -->
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">Good day, {{ request.user.username }}! 👋</h1>
+        <p class="welcome-sub">{{ today|date:"l, F j, Y" }} — Stay on track today.</p>
+      </div>
+
+      <a href="{% url 'nutrition:food_log' %}" class="btn-add-meal">+ Log a Meal</a>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+
+      <div class="stat-card calories-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+          <div class="stat-label">Calories Today</div>
+          <div class="stat-value">{{ calories_consumed }} <span>/ {{ calorie_goal }} kcal</span></div>
+          <div class="progress-track">
+            <div class="progress-fill cal-fill" style="width: {{ calorie_percent }}%"></div>
+          </div>
+          <div class="stat-sub">{{ calories_remaining }} kcal remaining</div>
+        </div>
+      </div>
+
+      <div class="stat-card water-card">
+        <div class="stat-icon">💧</div>
+        <div class="stat-info">
+          <div class="stat-label">Water Intake</div>
+          <div class="stat-value">{{ water_consumed }} <span>/ {{ water_goal }} ml</span></div>
+          <div class="progress-track">
+            <div class="progress-fill water-fill" style="width: {{ water_percent }}%"></div>
+          </div>
+          <div class="stat-sub">{{ water_percent }}% of daily goal</div>
+        </div>
+      </div>
+
+      <div class="stat-card bmi-card">
+        <div class="stat-icon">⚖️</div>
+        <div class="stat-info">
+          <div class="stat-label">BMI</div>
+          <div class="stat-value">{% if bmi %}{{ bmi }}{% else %}—{% endif %}</div>
+          <div class="stat-sub bmi-badge">
+            {% if bmi_category %}{{ bmi_category }}{% else %}Complete your profile{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card tdee-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-info">
+          <div class="stat-label">Daily Energy Burn</div>
+          <div class="stat-value">
+            {% if tdee %}{{ tdee|floatformat:0 }}{% else %}—{% endif %}
+            <span>kcal</span>
+          </div>
+          <div class="stat-sub">Your TDEE (estimated)</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MEAL LOG SECTION -->
+    <div class="meals-section">
+      <h2 class="section-title">Today's Meals</h2>
+      <div class="meals-grid">
+
+        <div class="meal-card">
+          <div class="meal-header breakfast-header">
+            <span>🌅 Breakfast</span>
+            <span class="meal-cal">{% for m in breakfast %}{% if forloop.last %}{{ m.total_calories|floatformat:0 }} kcal{% endif %}{% empty %}0 kcal{% endfor %}</span>
+          </div>
+          <div class="meal-items">
+            {% for m in breakfast %}
+              <div class="meal-item">
+                <span>{{ m.food_item.name_en }}</span>
+                <span class="meal-item-cal">{{ m.total_calories|floatformat:0 }} kcal</span>
+              </div>
+            {% empty %}
+              <div class="meal-empty">No meals logged yet</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-header lunch-header">
+            <span>☀️ Lunch</span>
+            <span class="meal-cal">{% for m in lunch %}{% if forloop.last %}{{ m.total_calories|floatformat:0 }} kcal{% endif %}{% empty %}0 kcal{% endfor %}</span>
+          </div>
+          <div class="meal-items">
+            {% for m in lunch %}
+              <div class="meal-item">
+                <span>{{ m.food_item.name_en }}</span>
+                <span class="meal-item-cal">{{ m.total_calories|floatformat:0 }} kcal</span>
+              </div>
+            {% empty %}
+              <div class="meal-empty">No meals logged yet</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-header dinner-header">
+            <span>🌙 Dinner</span>
+            <span class="meal-cal">{% for m in dinner %}{% if forloop.last %}{{ m.total_calories|floatformat:0 }} kcal{% endif %}{% empty %}0 kcal{% endfor %}</span>
+          </div>
+          <div class="meal-items">
+            {% for m in dinner %}
+              <div class="meal-item">
+                <span>{{ m.food_item.name_en }}</span>
+                <span class="meal-item-cal">{{ m.total_calories|floatformat:0 }} kcal</span>
+              </div>
+            {% empty %}
+              <div class="meal-empty">No meals logged yet</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-header snack-header">
+            <span>🍎 Snacks</span>
+            <span class="meal-cal">{% for m in snacks %}{% if forloop.last %}{{ m.total_calories|floatformat:0 }} kcal{% endif %}{% empty %}0 kcal{% endfor %}</span>
+          </div>
+          <div class="meal-items">
+            {% for m in snacks %}
+              <div class="meal-item">
+                <span>{{ m.food_item.name_en }}</span>
+                <span class="meal-item-cal">{{ m.total_calories|floatformat:0 }} kcal</span>
+              </div>
+            {% empty %}
+              <div class="meal-empty">No meals logged yet</div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <h2 class="section-title">Weekly Overview 📊</h2>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-card-header"><span>🔥 Calorie Progress</span></div>
+          <canvas id="calorieChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><span>🥗 Today's Macros</span></div>
+          <canvas id="macroChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Calorie Bar Chart
+    const calorieCtx = document.getElementById('calorieChart').getContext('2d');
+    new Chart(calorieCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'],
+            datasets: [{
+                label: 'Calories Consumed',
+                data: [0, 0, 0, 0, 0, 0, {{ calories_consumed }}],
+                backgroundColor: [
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.2)',
+                    'rgba(26,122,84,0.85)',
+                ],
+                borderColor: '#0f4c35',
+                borderWidth: 2,
+                borderRadius: 8,
+            }, {
+                label: 'Calorie Goal',
+                data: Array(7).fill({{ calorie_goal }}),
+                type: 'line',
+                borderColor: '#e74c3c',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, position: 'bottom',
+                    labels: { font: { family: 'Poppins', size: 11 } }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Macro Doughnut Chart
+    let totalProtein = 0, totalCarbs = 0, totalFat = 0;
+    {% for log in breakfast %}
+        totalProtein += {{ log.total_protein|default:0 }};
+        totalCarbs   += {{ log.total_carbs|default:0 }};
+        totalFat     += {{ log.total_fat|default:0 }};
+    {% endfor %}
+    {% for log in lunch %}
+        totalProtein += {{ log.total_protein|default:0 }};
+        totalCarbs   += {{ log.total_carbs|default:0 }};
+        totalFat     += {{ log.total_fat|default:0 }};
+    {% endfor %}
+    {% for log in dinner %}
+        totalProtein += {{ log.total_protein|default:0 }};
+        totalCarbs   += {{ log.total_carbs|default:0 }};
+        totalFat     += {{ log.total_fat|default:0 }};
+    {% endfor %}
+    {% for log in snacks %}
+        totalProtein += {{ log.total_protein|default:0 }};
+        totalCarbs   += {{ log.total_carbs|default:0 }};
+        totalFat     += {{ log.total_fat|default:0 }};
+    {% endfor %}
+
+    const macroCtx = document.getElementById('macroChart').getContext('2d');
+    new Chart(macroCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Protein (g)', 'Carbs (g)', 'Fats (g)'],
+            datasets: [{
+                data: [totalProtein||1, totalCarbs||1, totalFat||1],
+                backgroundColor: ['#e74c3c', '#f39c12', '#3498db'],
+                borderWidth: 0,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '65%',
+            plugins: {
+                legend: { position: 'bottom',
+                    labels: { font: { family: 'Poppins', size: 11 } }
+                }
+            }
+        }
+    });
+
+});
+</script>
+{% endblock %}

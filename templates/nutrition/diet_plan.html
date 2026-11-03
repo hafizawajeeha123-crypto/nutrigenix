@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}7-Day Diet Plan — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+  <div class="dash-content">
+
+    <!-- Header -->
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">7-Day Diet Plan 📅</h1>
+        <p class="welcome-sub">
+          Personalized for {{ profile.daily_calorie_goal|default:"2000" }} kcal/day
+          — {{ profile.get_health_goal_display|default:"Maintain weight" }}
+        </p>
+      </div>
+      <div style="display:flex;gap:12px;">
+        {% if active_plan %}
+        <button class="btn-danger-outline" onclick="deletePlan()">🗑 Delete Plan</button>
+        {% endif %}
+        <button class="btn-add-meal" onclick="generatePlan()" id="gen-btn">
+          {% if active_plan %}🔄 Regenerate Plan{% else %}✨ Generate My Plan{% endif %}
+        </button>
+      </div>
+    </div>
+
+    {% if not profile.daily_calorie_goal %}
+    <!-- Warning: profile incomplete -->
+    <div class="plan-warning">
+      ⚠️ Your profile is incomplete. Please
+      <a href="{% url 'users:profile' %}">complete your profile</a>
+      first to get an accurate personalized plan.
+    </div>
+    {% endif %}
+
+    {% if active_plan %}
+    <!-- Plan info bar -->
+    <div class="plan-info-bar">
+      <div class="plan-info-item">
+        <span class="pii-label">Plan Name</span>
+        <span class="pii-value">{{ active_plan.title }}</span>
+      </div>
+      <div class="plan-info-item">
+        <span class="pii-label">Calorie Target</span>
+        <span class="pii-value">{{ active_plan.calorie_target }} kcal/day</span>
+      </div>
+      <div class="plan-info-item">
+        <span class="pii-label">Start Date</span>
+        <span class="pii-value">{{ active_plan.start_date|date:"M d, Y" }}</span>
+      </div>
+      <div class="plan-info-item">
+        <span class="pii-label">End Date</span>
+        <span class="pii-value">{{ active_plan.end_date|date:"M d, Y" }}</span>
+      </div>
+    </div>
+
+    <!-- 7-Day Grid -->
+    {% with day_names="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday" %}
+    {% for day_num in days %}
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-number">Day {{ day_num }}</span>
+        <span class="day-name">
+          {% if day_num == 1 %}Monday
+          {% elif day_num == 2 %}Tuesday
+          {% elif day_num == 3 %}Wednesday
+          {% elif day_num == 4 %}Thursday
+          {% elif day_num == 5 %}Friday
+          {% elif day_num == 6 %}Saturday
+          {% else %}Sunday{% endif %}
+        </span>
+      </div>
+
+      <div class="day-meals">
+        {% for meal_type in meal_types %}
+        <div class="plan-meal-slot">
+          <div class="plan-meal-type
+            {% if meal_type == 'breakfast' %}pmt-breakfast
+            {% elif meal_type == 'lunch' %}pmt-lunch
+            {% elif meal_type == 'dinner' %}pmt-dinner
+            {% else %}pmt-snack{% endif %}">
+            {% if meal_type == 'breakfast' %}🌅
+            {% elif meal_type == 'lunch' %}☀️
+            {% elif meal_type == 'dinner' %}🌙
+            {% else %}🍎{% endif %}
+            {{ meal_type|title }}
+          </div>
+          <div class="plan-meal-food">
+            {% for meal in active_plan.meals.all %}
+              {% if meal.day_number == day_num and meal.meal_type == meal_type %}
+              <div class="pmf-name">{{ meal.food_item.name_en }}</div>
+              <div class="pmf-detail">
+                {{ meal.quantity_servings }} serving ·
+                <strong>{{ meal.calories|floatformat:0 }} kcal</strong>
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endwith %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="plan-empty-state">
+      <div class="pes-icon">📅</div>
+      <h2 class="pes-title">No Diet Plan Yet</h2>
+      <p class="pes-sub">
+        Click "Generate My Plan" to create a personalized 7-day meal plan
+        based on your calorie goal and health conditions.
+      </p>
+      <button class="btn-add-meal" onclick="generatePlan()" style="margin-top:24px;">
+        ✨ Generate My Plan
+      </button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display:none;">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Generating your personalized plan...</div>
+    <div class="loading-sub">Analyzing your calorie goal and health conditions</div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+
+function generatePlan() {
+  document.getElementById('loading-overlay').style.display = 'flex';
+  document.getElementById('gen-btn').disabled = true;
+
+  fetch('/nutrition/api/generate-plan/', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body:    JSON.stringify({}),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    }
+  })
+  .catch(() => {
+    document.getElementById('loading-overlay').style.display = 'none';
+    alert('Something went wrong. Please try again.');
+  });
+}
+
+function deletePlan() {
+  if (!confirm('Delete current diet plan?')) return;
+  fetch('/nutrition/api/delete-plan/', {
+    method:  'POST',
+    headers: { 'X-CSRFToken': CSRF },
+  })
+  .then(() => location.reload());
+}
+</script>
+{% endblock %}

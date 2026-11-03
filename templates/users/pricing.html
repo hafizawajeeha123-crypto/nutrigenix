@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}Pricing — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <div class="dash-content">
+
+    <div style="text-align:center;margin-bottom:48px;">
+      <h1 style="font-size:32px;font-weight:700;color:#1a1a1a;">Choose Your Plan</h1>
+      <p style="font-size:16px;color:#888;">Start free, upgrade anytime. Cancel anytime.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <!-- FREE PLAN -->
+      <div class="pricing-card">
+        <div class="pricing-badge free-badge">Free</div>
+        <div class="pricing-price">Rs. 0<span>/month</span></div>
+        <div class="pricing-desc">Perfect for getting started</div>
+        <ul class="pricing-features">
+          <li class="feat-yes">✓ Dashboard & Calorie Tracking</li>
+          <li class="feat-yes">✓ Food Log (55+ Pakistani foods)</li>
+          <li class="feat-yes">✓ BMI/TDEE Calculator</li>
+          <li class="feat-yes">✓ Water Intake Tracker</li>
+          <li class="feat-no">✗ AI Chatbot (10 msg/day only)</li>
+          <li class="feat-no">✗ 7-Day Diet Plan</li>
+          <li class="feat-no">✗ Health Condition Filters</li>
+          <li class="feat-no">✗ Priority Support</li>
+        </ul>
+        {% if request.user.is_authenticated %}
+          {% if request.user.profile.is_premium %}
+            <a href="{% url 'users:cancel_premium' %}" class="btn-pricing-free">Downgrade to Free</a>
+          {% else %}
+            <button class="btn-current-plan" disabled>Current Plan ✓</button>
+          {% endif %}
+        {% else %}
+          <a href="{% url 'users:register' %}" class="btn-pricing-free">Get Started Free</a>
+        {% endif %}
+      </div>
+
+      <!-- MONTHLY PLAN -->
+      <div class="pricing-card pricing-popular">
+        <div class="popular-tag">⭐ Most Popular</div>
+        <div class="pricing-badge premium-badge">Premium</div>
+        <div class="pricing-price">Rs. 499<span>/month</span></div>
+        <div class="pricing-desc">For serious health goals</div>
+        <ul class="pricing-features">
+          <li class="feat-yes">✓ Everything in Free</li>
+          <li class="feat-yes">✓ Unlimited AI Chatbot</li>
+          <li class="feat-yes">✓ Unlimited Diet Plans</li>
+          <li class="feat-yes">✓ 500+ Food Database</li>
+          <li class="feat-yes">✓ Health Condition Filters</li>
+          <li class="feat-yes">✓ Weekly Progress Reports</li>
+          <li class="feat-yes">✓ Custom Calorie Goals</li>
+          <li class="feat-yes">✓ Priority Support</li>
+        </ul>
+        <a href="{% url 'users:payment' %}?plan=monthly" class="btn-pricing-premium">Get Premium →</a>
+      </div>
+
+      <!-- YEARLY PLAN -->
+      <div class="pricing-card">
+        <div class="pricing-badge yearly-badge">Yearly</div>
+        <div class="pricing-price">Rs. 3,999<span>/year</span></div>
+        <div class="pricing-desc">Save Rs. 2,000 vs monthly</div>
+        <ul class="pricing-features">
+          <li class="feat-yes">✓ Everything in Premium</li>
+          <li class="feat-yes">✓ 2 Months Free</li>
+          <li class="feat-yes">✓ Exclusive Meal Plans</li>
+          <li class="feat-yes">✓ Nutritionist Consultation</li>
+          <li class="feat-yes">✓ Family Account (3 users)</li>
+          <li class="feat-yes">✓ Offline Access</li>
+          <li class="feat-yes">✓ Advanced Analytics</li>
+          <li class="feat-yes">✓ 24/7 Priority Support</li>
+        </ul>
+        <a href="{% url 'users:payment' %}?plan=yearly" class="btn-pricing-premium">Get Yearly →</a>
+      </div>
+
+    </div>
+
+    <!-- Trust badges -->
+    <div class="trust-row">
+      <div class="trust-item">🔒 Secure Payment</div>
+      <div class="trust-item">↩️ 7-Day Money Back</div>
+      <div class="trust-item">❌ Cancel Anytime</div>
+      <div class="trust-item">🇵🇰 Pakistani Payment Methods</div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

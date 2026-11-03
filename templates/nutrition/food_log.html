@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}Food Log — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+    
+
+  <div class="dash-content">
+
+    <!-- Header -->
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">Food Log 🍽️</h1>
+        <p class="welcome-sub">{{ today|date:"l, F j, Y" }} — {{ total_calories }} / {{ calorie_goal }} kcal consumed</p>
+      </div>
+      <button class="btn-add-meal" onclick="openModal()">+ Add Food</button>
+    </div>
+
+    <!-- Calorie bar -->
+    <div class="cal-bar-wrap">
+      <div class="cal-bar-fill" style="width:{% widthratio total_calories calorie_goal 100 %}%"></div>
+    </div>
+    <p style="font-size:13px;color:#888;margin-bottom:32px;">
+      {{ total_calories }} kcal consumed &nbsp;·&nbsp;
+      {% widthratio total_calories calorie_goal 100 %}% of daily goal
+    </p>
+
+    <!-- Meal sections -->
+    {% for meal_type in meal_types %}
+    <div class="meal-log-section">
+      <div class="meal-log-header
+        {% if meal_type == 'breakfast' %}ml-breakfast
+        {% elif meal_type == 'lunch' %}ml-lunch
+        {% elif meal_type == 'dinner' %}ml-dinner
+        {% else %}ml-snack{% endif %}">
+        {% if meal_type == 'breakfast' %}🌅
+        {% elif meal_type == 'lunch' %}☀️
+        {% elif meal_type == 'dinner' %}🌙
+        {% else %}🍎{% endif %}
+        {{ meal_type|title }}
+        <button class="add-to-meal-btn"
+          onclick="openModal('{{ meal_type }}')">+ Add</button>
+      </div>
+
+      <div class="meal-log-items" id="meal-{{ meal_type }}">
+        {% for log in meal_logs %}
+          {% if log.meal_type == meal_type %}
+          <div class="meal-log-item" id="log-{{ log.id }}">
+            <div class="mli-info">
+              <div class="mli-name">{{ log.food_item.name_en }}</div>
+              <div class="mli-meta">
+                {{ log.quantity_servings }} serving ·
+                P: {{ log.total_protein|floatformat:1 }}g ·
+                C: {{ log.total_carbs|floatformat:1 }}g ·
+                F: {{ log.total_fat|floatformat:1 }}g
+              </div>
+            </div>
+            <div class="mli-right">
+              <span class="mli-cal">{{ log.total_calories|floatformat:0 }} kcal</span>
+              <button class="mli-delete" onclick="deleteMeal({{ log.id }})">✕</button>
+            </div>
+          </div>
+          {% endif %}
+        {% empty %}
+        {% endfor %}
+        <div class="meal-empty-msg" id="empty-{{ meal_type }}">
+          {% with found=False %}
+          {% for log in meal_logs %}{% if log.meal_type == meal_type %}{% endif %}{% endfor %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+
+<!-- ADD FOOD MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Add Food</h3>
+      <button onclick="closeModal()" class="modal-close">✕</button>
+    </div>
+
+    <!-- Meal type selector -->
+    <div class="modal-section">
+      <label class="modal-label">Meal Type</label>
+      <div class="meal-type-pills">
+        <button class="pill active" onclick="selectMeal('breakfast', this)">🌅 Breakfast</button>
+        <button class="pill" onclick="selectMeal('lunch', this)">☀️ Lunch</button>
+        <button class="pill" onclick="selectMeal('dinner', this)">🌙 Dinner</button>
+        <button class="pill" onclick="selectMeal('snack', this)">🍎 Snack</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="modal-section">
+      <label class="modal-label">Search Food</label>
+      <input type="text" id="food-search-input" class="modal-input"
+        placeholder="e.g. Chicken Biryani, Roti, Daal..."
+        oninput="searchFoods(this.value)">
+    </div>
+
+    <!-- Results -->
+    <div id="search-results" class="search-results">
+      <div class="search-hint">Type to search Pakistani foods...</div>
+    </div>
+
+    <!-- Selected food -->
+    <div id="selected-food-panel" style="display:none;">
+      <div class="selected-food-card">
+        <div id="selected-food-name" class="sf-name"></div>
+        <div id="selected-food-macros" class="sf-macros"></div>
+        <div class="sf-qty-row">
+          <label class="modal-label">Servings</label>
+          <div class="qty-control">
+            <button onclick="changeQty(-0.5)">−</button>
+            <span id="qty-display">1.0</span>
+            <button onclick="changeQty(0.5)">+</button>
+          </div>
+        </div>
+        <div id="qty-calories" class="qty-cal"></div>
+        <button class="btn-log-meal" onclick="logMeal()">Log Meal →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let selectedFood = null;
+let selectedMealType = 'breakfast';
+let quantity = 1.0;
+const CSRF = '{{ csrf_token }}';
+
+function openModal(mealType = 'breakfast') {
+  selectedMealType = mealType;
+  document.getElementById('modal').style.display = 'flex';
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pill').forEach(p => {
+    if (p.textContent.toLowerCase().includes(mealType)) p.classList.add('active');
+  });
+  document.getElementById('food-search-input').focus();
+}
+
+function closeModal(e) {
+  if (!e || e.target.id === 'modal' || e.target.classList.contains('modal-close') || e.type === 'click' && !e.target.closest('.modal-box')) {
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('food-search-input').value = '';
+    document.getElementById('search-results').innerHTML = '<div class="search-hint">Type to search Pakistani foods...</div>';
+    document.getElementById('selected-food-panel').style.display = 'none';
+    selectedFood = null;
+    quantity = 1.0;
+  }
+}
+
+function selectMeal(type, btn) {
+  selectedMealType = type;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+let searchTimer;
+function searchFoods(query) {
+  clearTimeout(searchTimer);
+  if (query.length < 2) {
+    document.getElementById('search-results').innerHTML = '<div class="search-hint">Type to search Pakistani foods...</div>';
+    return;
+  }
+  searchTimer = setTimeout(() => {
+    fetch(`/nutrition/api/food-search/?q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(data => renderResults(data.foods));
+  }, 300);
+}
+
+function renderResults(foods) {
+  const el = document.getElementById('search-results');
+  if (!foods.length) {
+    el.innerHTML = '<div class="search-hint">No foods found. Try another name.</div>';
+    return;
+  }
+  el.innerHTML = foods.map(f => `
+    <div class="search-item" onclick="selectFood(${JSON.stringify(f).replace(/"/g, '&quot;')})">
+      <div class="si-name">${f.name}</div>
+      <div class="si-meta">${f.calories} kcal · ${f.serving} · ${f.category}</div>
+    </div>
+  `).join('');
+}
+
+function selectFood(food) {
+  selectedFood = food;
+  quantity = 1.0;
+  document.getElementById('selected-food-panel').style.display = 'block';
+  document.getElementById('selected-food-name').textContent = food.name;
+  document.getElementById('selected-food-macros').textContent =
+    `${food.calories} kcal per serving · P: ${food.protein}g · C: ${food.carbs}g · F: ${food.fat}g`;
+  updateQtyDisplay();
+}
+
+function changeQty(delta) {
+  quantity = Math.max(0.5, quantity + delta);
+  updateQtyDisplay();
+}
+
+function updateQtyDisplay() {
+  document.getElementById('qty-display').textContent = quantity.toFixed(1);
+  if (selectedFood) {
+    const cal = (selectedFood.calories * quantity).toFixed(0);
+    document.getElementById('qty-calories').textContent = `Total: ${cal} kcal`;
+  }
+}
+
+function logMeal() {
+  if (!selectedFood) return;
+  fetch('/nutrition/api/add-meal/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ food_id: selectedFood.id, meal_type: selectedMealType, quantity: quantity })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      addMealToDOM(data);
+      closeModal();
+      showToast(`✓ ${data.food_name} logged!`);
+    }
+  });
+}
+
+function addMealToDOM(data) {
+  const container = document.getElementById(`meal-${data.meal_type}`);
+  const div = document.createElement('div');
+  div.className = 'meal-log-item';
+  div.id = `log-${data.log_id}`;
+  div.innerHTML = `
+    <div class="mli-info">
+      <div class="mli-name">${data.food_name}</div>
+      <div class="mli-meta">Added just now</div>
+    </div>
+    <div class="mli-right">
+      <span class="mli-cal">${data.calories.toFixed(0)} kcal</span>
+      <button class="mli-delete" onclick="deleteMeal(${data.log_id})">✕</button>
+    </div>`;
+  container.appendChild(div);
+}
+
+function deleteMeal(logId) {
+  if (!confirm('Remove this meal?')) return;
+  fetch(`/nutrition/api/delete-meal/${logId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`log-${logId}`)?.remove();
+      showToast('Meal removed.');
+    }
+  });
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast-msg';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+{% endblock %}

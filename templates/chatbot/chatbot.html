@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}AI Chatbot — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <div class="dash-content">
+    <div class="chat-layout">
+
+      <!-- Chat window -->
+      <div class="chat-card">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="chat-avatar">🤖</div>
+            <div>
+              <div class="chat-name">NutriGenix AI</div>
+              <div class="chat-status">● Online — Diet & Nutrition Expert</div>
+            </div>
+          </div>
+          <div class="chat-header-right">
+            <div class="msg-counter {% if is_limit_reached %}limit-reached{% endif %}">
+              <span id="msg-remaining">{{ messages_remaining }}</span>/10 messages today
+            </div>
+            <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chat-messages">
+
+          <!-- Welcome message — only when no history -->
+          {% if not messages %}
+          <div class="chat-bubble assistant-bubble">
+            <div class="bubble-avatar">🤖</div>
+            <div class="bubble-content">
+              <div class="bubble-text">
+                Assalam-o-Alaikum! I am NutriGenix AI — your personal diet &amp; nutrition expert. 🥗<br><br>
+                I can help you with:<br>
+                • <strong>Calorie and macro advice</strong><br>
+                • <strong>Pakistani food recommendations</strong><br>
+                • <strong>Weight loss/gain tips</strong><br>
+                • <strong>Diabetes, PCOS, BP diet guidance</strong><br><br>
+                What would you like to know?
+              </div>
+              <div class="bubble-time">Just now</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Chat history -->
+          {% for msg in messages %}
+          <div class="chat-bubble {% if msg.role == 'user' %}user-bubble{% else %}assistant-bubble{% endif %}">
+            {% if msg.role == 'assistant' %}
+            <div class="bubble-avatar">🤖</div>
+            {% endif %}
+            <div class="bubble-content">
+              <div class="bubble-text">{{ msg.content|linebreaksbr }}</div>
+              <div class="bubble-time">{{ msg.created_at|time:"g:i A" }}</div>
+            </div>
+            {% if msg.role == 'user' %}
+            <div class="bubble-avatar user-avatar">👤</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <!-- Typing indicator -->
+          <div class="chat-bubble assistant-bubble" id="typing-indicator" style="display:none;">
+            <div class="bubble-avatar">🤖</div>
+            <div class="bubble-content">
+              <div class="typing-dots">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input area -->
+        <div class="chat-input-area">
+          {% if is_limit_reached %}
+<div class="limit-banner">
+  Daily limit reached (10/10 messages). 
+  <a href="{% url 'users:pricing' %}" style="color:#0f4c35;font-weight:700;">
+    Upgrade to Premium →
+  </a>
+  for unlimited messages! 🌙
+</div>
+          {% else %}
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" class="chat-input"
+              placeholder="Ask about diet, calories, Pakistani foods..."
+              onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="chat-send-btn" onclick="sendMessage()" id="send-btn">
+              Send ➤
+            </button>
+          </div>
+          {% endif %}
+
+          <!-- Quick suggestions — only fill input, do NOT auto send -->
+          <div class="quick-suggestions">
+            <button class="suggestion-chip" onclick="fillInput('What should I eat for weight loss?')">Weight loss tips</button>
+            <button class="suggestion-chip" onclick="fillInput('Best high protein Pakistani foods?')">High protein foods</button>
+            <button class="suggestion-chip" onclick="fillInput('Diabetes friendly Pakistani diet?')">Diabetes diet</button>
+            <button class="suggestion-chip" onclick="fillInput('How many calories in chicken biryani?')">Biryani calories</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="chat-sidebar">
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">💡 Tips for better answers</h3>
+          <ul class="sidebar-tips">
+            <li>Mention your health goal (lose/gain weight)</li>
+            <li>Share your health condition if any</li>
+            <li>Ask about specific Pakistani dishes</li>
+            <li>Request a sample meal plan</li>
+            <li>Ask for healthy food swaps</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">🔥 Popular Questions</h3>
+          <div class="popular-q-list">
+            <div class="popular-q" onclick="fillInput('Give me a 1500 calorie Pakistani diet plan')">Give me a 1500 calorie diet plan</div>
+            <div class="popular-q" onclick="fillInput('What to eat for PCOS?')">PCOS friendly foods</div>
+            <div class="popular-q" onclick="fillInput('Healthy alternatives to paratha?')">Paratha alternatives</div>
+            <div class="popular-q" onclick="fillInput('How to lose weight with Pakistani food?')">Lose weight with desi food</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let isWaiting = false;
+
+// Fill input only — user decides when to send
+function fillInput(text) {
+  const input = document.getElementById('chat-input');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if (!msg || isWaiting) return;
+
+  input.value = '';
+  appendMessage('user', msg);
+  showTyping(true);
+  isWaiting = true;
+  document.getElementById('send-btn').disabled = true;
+
+  fetch('/api/chat/', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body:    JSON.stringify({ message: msg }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    showTyping(false);
+    isWaiting = false;
+    document.getElementById('send-btn').disabled = false;
+
+    if (data.limit_reached) {
+      appendMessage('assistant', '⚠️ Daily limit reached (10/10 messages). Come back tomorrow!');
+      return;
+    }
+    if (data.error) {
+      appendMessage('assistant', '❌ ' + data.error);
+      return;
+    }
+
+    appendMessage('assistant', data.reply);
+    document.getElementById('msg-remaining').textContent = data.messages_remaining;
+  })
+  .catch(() => {
+    showTyping(false);
+    isWaiting = false;
+    document.getElementById('send-btn').disabled = false;
+    appendMessage('assistant', 'Connection error. Please try again.');
+  });
+}
+
+function appendMessage(role, text) {
+  const container = document.getElementById('chat-messages');
+  const isUser    = role === 'user';
+  const div = document.createElement('div');
+  div.className = `chat-bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}`;
+  const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  div.innerHTML = `
+    ${!isUser ? '<div class="bubble-avatar">🤖</div>' : ''}
+    <div class="bubble-content">
+      <div class="bubble-text">${text.replace(/\n/g, '<br>')}</div>
+      <div class="bubble-time">${now}</div>
+    </div>
+    ${isUser ? '<div class="bubble-avatar user-avatar">👤</div>' : ''}
+  `;
+  const indicator = document.getElementById('typing-indicator');
+  container.insertBefore(div, indicator);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping(show) {
+  document.getElementById('typing-indicator').style.display = show ? 'flex' : 'none';
+  const container = document.getElementById('chat-messages');
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearChat() {
+  if (!confirm('Clear all chat history?')) return;
+  fetch('/api/chat/clear/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(() => location.reload());
+}
+
+// Auto scroll to bottom on load
+window.onload = () => {
+  const c = document.getElementById('chat-messages');
+  if (c) c.scrollTop = c.scrollHeight;
+};
+</script>
+{% endblock %}

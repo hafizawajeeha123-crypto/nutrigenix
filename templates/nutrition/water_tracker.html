@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}Water Tracker — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+
+  <div class="dash-content">
+
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">Water Tracker 💧</h1>
+        <p class="welcome-sub">{{ today|date:"l, F j, Y" }} — Stay hydrated!</p>
+      </div>
+    </div>
+
+    <div class="water-layout">
+
+      <!-- LEFT: Big progress circle + quick add -->
+      <div class="water-left">
+
+        <!-- Circle progress -->
+        <div class="water-circle-card">
+          <div class="water-circle-wrap">
+            <svg class="water-svg" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="80" fill="none"
+                stroke="#e8f4fd" stroke-width="16"/>
+              <circle cx="100" cy="100" r="80" fill="none"
+                stroke="url(#waterGrad)" stroke-width="16"
+                stroke-linecap="round"
+                stroke-dasharray="502"
+                stroke-dashoffset="{{ 502|add:'-'|add:percent|floatformat:0 }}"
+                id="water-circle"
+                style="stroke-dashoffset: calc(502 - (502 * {{ percent }} / 100)); transform: rotate(-90deg); transform-origin: center;"
+              />
+              <defs>
+                <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#1a6ea8"/>
+                  <stop offset="100%" style="stop-color:#2196f3"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="water-circle-text">
+              <div class="water-circle-ml" id="total-ml">{{ total_ml }}</div>
+              <div class="water-circle-unit">ml</div>
+              <div class="water-circle-goal">of {{ goal_ml }} ml</div>
+            </div>
+          </div>
+          <div class="water-stats-row">
+            <div class="water-stat">
+              <div class="ws-value" id="percent-val">{{ percent }}%</div>
+              <div class="ws-label">Completed</div>
+            </div>
+            <div class="water-stat">
+              <div class="ws-value" id="remaining-val">{{ remaining }}</div>
+              <div class="ws-label">ml Remaining</div>
+            </div>
+            <div class="water-stat">
+              <div class="ws-value">{{ water_logs.count }}</div>
+              <div class="ws-label">Glasses</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="quick-add-card">
+          <h3 class="quick-add-title">Quick Add 💧</h3>
+          <div class="quick-add-grid">
+            <button class="quick-btn" onclick="addWater(150)">
+              <span class="qb-icon">🥃</span>
+              <span class="qb-amount">150 ml</span>
+              <span class="qb-label">Small Glass</span>
+            </button>
+            <button class="quick-btn" onclick="addWater(250)">
+              <span class="qb-icon">🥤</span>
+              <span class="qb-amount">250 ml</span>
+              <span class="qb-label">Glass</span>
+            </button>
+            <button class="quick-btn" onclick="addWater(500)">
+              <span class="qb-icon">🍶</span>
+              <span class="qb-amount">500 ml</span>
+              <span class="qb-label">Large Bottle</span>
+            </button>
+            <button class="quick-btn" onclick="addWater(1000)">
+              <span class="qb-icon">🫙</span>
+              <span class="qb-amount">1000 ml</span>
+              <span class="qb-label">1 Litre</span>
+            </button>
+          </div>
+
+          <!-- Custom amount -->
+          <div class="custom-add-row">
+            <input type="number" id="custom-ml" class="calc-input"
+              placeholder="Custom amount (ml)" min="1" max="2000">
+            <button class="btn-add-custom" onclick="addCustomWater()">Add</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Log history -->
+      <div class="water-right">
+        <div class="water-log-card">
+          <h3 class="water-log-title">Today's Log</h3>
+
+          <div id="water-log-list">
+            {% for log in water_logs %}
+            <div class="water-log-item" id="wlog-{{ log.id }}">
+              <div class="wli-icon">💧</div>
+              <div class="wli-info">
+                <div class="wli-amount">{{ log.amount_ml }} ml</div>
+                <div class="wli-time">{{ log.logged_at|time:"g:i A" }}
+                  {% if log.notes %} · {{ log.notes }}{% endif %}
+                </div>
+              </div>
+              <button class="wli-delete" onclick="deleteWater({{ log.id }})">✕</button>
+            </div>
+            {% empty %}
+            <div class="water-empty" id="water-empty-msg">
+              <div style="font-size:48px;margin-bottom:12px;">💧</div>
+              <div style="font-weight:600;color:#333;margin-bottom:4px;">No water logged yet</div>
+              <div style="font-size:13px;color:#aaa;">Click a button to log your first glass!</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Hydration tips -->
+        <div class="hydration-tips-card">
+          <h3 class="water-log-title">💡 Hydration Tips</h3>
+          <ul class="tips-list">
+            <li>Drink a glass of water right after waking up</li>
+            <li>Aim for 8 glasses (2 litres) per day</li>
+            <li>Drink water before every meal</li>
+            <li>Carry a water bottle with you always</li>
+            <li>Increase intake during hot weather or exercise</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let totalMl  = {{ total_ml }};
+let goalMl   = {{ goal_ml }};
+
+function addWater(amount) {
+  fetch('/nutrition/api/add-water/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ amount_ml: amount })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      updateCircle(data.total_ml, data.goal_ml, data.percent, data.remaining);
+      addLogItem(data.log_id, data.amount, data.time);
+      showToast(`💧 ${data.amount} ml added!`);
+    }
+  });
+}
+
+function addCustomWater() {
+  const val = parseInt(document.getElementById('custom-ml').value);
+  if (!val || val < 1) { showToast('Please enter a valid amount!'); return; }
+  addWater(val);
+  document.getElementById('custom-ml').value = '';
+}
+
+function deleteWater(logId) {
+  fetch(`/nutrition/api/delete-water/${logId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`wlog-${logId}`)?.remove();
+      updateCircle(data.total_ml, goalMl, data.percent, data.remaining);
+      showToast('Entry removed.');
+    }
+  });
+}
+
+function updateCircle(total, goal, percent, remaining) {
+  totalMl = total;
+  document.getElementById('total-ml').textContent  = total;
+  document.getElementById('percent-val').textContent = percent + '%';
+  document.getElementById('remaining-val').textContent = remaining;
+  const circle = document.getElementById('water-circle');
+  const offset = 502 - (502 * percent / 100);
+  circle.style.strokeDashoffset = offset;
+}
+
+function addLogItem(logId, amount, time) {
+  const emptyMsg = document.getElementById('water-empty-msg');
+  if (emptyMsg) emptyMsg.remove();
+  const list = document.getElementById('water-log-list');
+  const div  = document.createElement('div');
+  div.className = 'water-log-item';
+  div.id = `wlog-${logId}`;
+  div.innerHTML = `
+    <div class="wli-icon">💧</div>
+    <div class="wli-info">
+      <div class="wli-amount">${amount} ml</div>
+      <div class="wli-time">${time}</div>
+    </div>
+    <button class="wli-delete" onclick="deleteWater(${logId})">✕</button>`;
+  list.insertBefore(div, list.firstChild);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast-msg';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+{% endblock %}

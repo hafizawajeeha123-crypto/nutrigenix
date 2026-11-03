@@ -1,0 +1,22 @@
+# Secrets (NEVER upload)
+.env
+
+# Python
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Django
+db.sqlite3
+*.sqlite3
+*.log
+staticfiles/
+media/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

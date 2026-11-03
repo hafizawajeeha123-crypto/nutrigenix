@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NutriGenix{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+    {% if messages %}
+    <div class="position-fixed top-0 start-50 translate-middle-x pt-3" style="z-index:9999;min-width:320px;">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+    <nav class="dash-nav">
+        <div class="dash-nav-inner">
+            <a href="{% url 'nutrition:dashboard' %}" class="dash-logo">
+                Nutri<span>Genix</span> 🥗
+            </a>
+            <div class="dash-nav-links">
+                <a href="{% url 'nutrition:dashboard' %}"
+                   {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>
+                   Dashboard
+                </a>
+                <a href="{% url 'nutrition:food_log' %}"
+                   {% if request.resolver_match.url_name == 'food_log' %}class="nav-active"{% endif %}>
+                   Food Log
+                </a>
+                <a href="{% url 'nutrition:calculator' %}"
+                   {% if request.resolver_match.url_name == 'calculator' %}class="nav-active"{% endif %}>
+                   Calculator
+                </a>
+                <a href="{% url 'nutrition:water' %}"
+                   {% if request.resolver_match.url_name == 'water' %}class="nav-active"{% endif %}>
+                   Water
+                </a>
+                <a href="{% url 'chatbot:chatbot' %}"
+                   {% if request.resolver_match.url_name == 'chatbot' %}class="nav-active"{% endif %}>
+                   Chatbot
+                </a>
+                <a href="{% url 'nutrition:diet_plan' %}"
+                   {% if request.resolver_match.url_name == 'diet_plan' %}class="nav-active"{% endif %}>
+                   Diet Plan
+                </a>
+                    </a>
+                <a href="{% url 'users:profile' %}"
+                   {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>
+                   Profile
+                </a>
+            </div>
+            <div class="dash-user">
+                <span>👋 {{ request.user.username }}</span>
+                <a href="{% url 'users:logout' %}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

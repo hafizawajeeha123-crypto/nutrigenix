@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Login — SehatMand{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-logo">Nutri<span>Genix</span> 🥗</div>
+    <div class="auth-tagline">AI-Powered Nutrition & Diet Platform</div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" placeholder="Enter your username" required autofocus>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-sehat">Login →</button>
+    </form>
+
+    <div class="auth-switch">
+        New Account
+        <a href="{% url 'users:register' %}">Registered Now</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}Profile Setup — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <div class="dash-content">
+
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">Profile Setup 👤</h1>
+        <p class="welcome-sub">Complete your profile to get personalized calorie goals and diet recommendations.</p>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert-success">✓ {{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% if profile.bmi %}
+    <div class="bmi-result-banner">
+      <div class="brb-item">
+        <span class="brb-label">Your BMI</span>
+        <span class="brb-value">{{ profile.bmi }}</span>
+        <span class="brb-cat">{{ profile.bmi_category }}</span>
+      </div>
+      <div class="brb-item">
+        <span class="brb-label">Daily Calorie Goal</span>
+        <span class="brb-value">{{ profile.daily_calorie_goal }} kcal</span>
+      </div>
+      <div class="brb-item">
+        <span class="brb-label">TDEE</span>
+        <span class="brb-value">{{ profile.tdee|floatformat:0 }} kcal/day</span>
+      </div>
+      <div class="brb-item">
+        <span class="brb-label">BMR</span>
+        <span class="brb-value">{{ profile.bmr|floatformat:0 }} kcal/day</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="profile-grid">
+
+        <!-- Personal Information -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <span class="profile-card-icon">👤</span>
+            <h3>Personal Information</h3>
+          </div>
+
+          <div class="calc-row">
+            <div class="calc-field">
+              <label class="calc-label">First Name</label>
+              <input type="text" name="first_name" class="calc-input"
+                placeholder="e.g. Hafiza"
+                value="{{ request.user.first_name }}">
+            </div>
+            <div class="calc-field">
+              <label class="calc-label">Username</label>
+              <input type="text" class="calc-input"
+                value="{{ request.user.username }}" disabled
+                style="background:#f9f9f9;color:#999;">
+            </div>
+          </div>
+
+          <div class="calc-row">
+            <div class="calc-field">
+              <label class="calc-label">Age</label>
+              <input type="number" name="age" class="calc-input"
+                placeholder="e.g. 25" min="5" max="120"
+                value="{{ profile.age|default:'' }}">
+            </div>
+            <div class="calc-field">
+              <label class="calc-label">Gender</label>
+              <select name="gender" class="calc-input">
+                <option value="M" {% if profile.gender == 'M' %}selected{% endif %}>Male</option>
+                <option value="F" {% if profile.gender == 'F' %}selected{% endif %}>Female</option>
+                <option value="O" {% if profile.gender == 'O' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="calc-row">
+            <div class="calc-field">
+              <label class="calc-label">Height (cm)</label>
+              <input type="number" name="height_cm" class="calc-input"
+                placeholder="e.g. 165" min="50" max="250" step="0.1"
+                value="{{ profile.height_cm|default:'' }}">
+            </div>
+            <div class="calc-field">
+              <label class="calc-label">Current Weight (kg)</label>
+              <input type="number" name="weight_kg" class="calc-input"
+                placeholder="e.g. 65" min="10" max="300" step="0.1"
+                value="{{ profile.weight_kg|default:'' }}">
+            </div>
+          </div>
+
+          <div class="calc-field" style="margin-bottom:0">
+            <label class="calc-label">Target Weight (kg)</label>
+            <input type="number" name="target_weight_kg" class="calc-input"
+              placeholder="e.g. 60" min="10" max="300" step="0.1"
+              value="{{ profile.target_weight_kg|default:'' }}">
+          </div>
+        </div>
+
+        <!-- Lifestyle -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <span class="profile-card-icon">🏃</span>
+            <h3>Lifestyle & Goals</h3>
+          </div>
+
+          <div class="calc-field" style="margin-bottom:16px;">
+            <label class="calc-label">Activity Level</label>
+            <select name="activity_level" class="calc-input">
+              <option value="sedentary"   {% if profile.activity_level == 'sedentary'   %}selected{% endif %}>Sedentary — little or no exercise</option>
+              <option value="light"       {% if profile.activity_level == 'light'       %}selected{% endif %}>Lightly active — 1-3 days/week</option>
+              <option value="moderate"    {% if profile.activity_level == 'moderate'    %}selected{% endif %}>Moderately active — 3-5 days/week</option>
+              <option value="active"      {% if profile.activity_level == 'active'      %}selected{% endif %}>Very active — 6-7 days/week</option>
+              <option value="very_active" {% if profile.activity_level == 'very_active' %}selected{% endif %}>Extra active — physical job</option>
+            </select>
+          </div>
+
+          <div class="calc-field" style="margin-bottom:16px;">
+            <label class="calc-label">Health Goal</label>
+            <div class="goal-pills">
+              <label class="goal-pill {% if profile.health_goal == 'lose' %}active{% endif %}">
+                <input type="radio" name="health_goal" value="lose"
+                  {% if profile.health_goal == 'lose' %}checked{% endif %}>
+                🔻 Lose Weight
+              </label>
+              <label class="goal-pill {% if profile.health_goal == 'maintain' or not profile.health_goal %}active{% endif %}">
+                <input type="radio" name="health_goal" value="maintain"
+                  {% if profile.health_goal == 'maintain' or not profile.health_goal %}checked{% endif %}>
+                ⚖️ Maintain
+              </label>
+              <label class="goal-pill {% if profile.health_goal == 'gain' %}active{% endif %}">
+                <input type="radio" name="health_goal" value="gain"
+                  {% if profile.health_goal == 'gain' %}checked{% endif %}>
+                🔺 Gain Weight
+              </label>
+            </div>
+          </div>
+
+          <div class="calc-field" style="margin-bottom:0">
+            <label class="calc-label">Daily Water Goal (ml)</label>
+            <select name="daily_water_goal_ml" class="calc-input">
+              <option value="1500" {% if profile.daily_water_goal_ml == 1500 %}selected{% endif %}>1500 ml (6 glasses)</option>
+              <option value="2000" {% if profile.daily_water_goal_ml == 2000 or not profile.daily_water_goal_ml %}selected{% endif %}>2000 ml (8 glasses) — Recommended</option>
+              <option value="2500" {% if profile.daily_water_goal_ml == 2500 %}selected{% endif %}>2500 ml (10 glasses)</option>
+              <option value="3000" {% if profile.daily_water_goal_ml == 3000 %}selected{% endif %}>3000 ml (12 glasses)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Health Conditions -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <span class="profile-card-icon">🏥</span>
+            <h3>Health Conditions</h3>
+          </div>
+          <p style="font-size:13px;color:#888;margin-bottom:16px;">
+            Select any conditions you have — we'll filter food recommendations accordingly.
+          </p>
+          <div class="condition-grid">
+            <label class="condition-card {% if profile.has_diabetes %}condition-active{% endif %}">
+              <input type="checkbox" name="has_diabetes" {% if profile.has_diabetes %}checked{% endif %}>
+              <span class="condition-icon">🩸</span>
+              <span class="condition-name">Diabetes</span>
+            </label>
+            <label class="condition-card {% if profile.has_hypertension %}condition-active{% endif %}">
+              <input type="checkbox" name="has_hypertension" {% if profile.has_hypertension %}checked{% endif %}>
+              <span class="condition-icon">❤️</span>
+              <span class="condition-name">Hypertension</span>
+            </label>
+            <label class="condition-card {% if profile.has_pcos %}condition-active{% endif %}">
+              <input type="checkbox" name="has_pcos" {% if profile.has_pcos %}checked{% endif %}>
+              <span class="condition-icon">🔬</span>
+              <span class="condition-name">PCOS</span>
+            </label>
+            <label class="condition-card {% if profile.has_thyroid_issue %}condition-active{% endif %}">
+              <input type="checkbox" name="has_thyroid_issue" {% if profile.has_thyroid_issue %}checked{% endif %}>
+              <span class="condition-icon">🦋</span>
+              <span class="condition-name">Thyroid Issue</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Language Preference -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <span class="profile-card-icon">🌐</span>
+            <h3>Language Preference</h3>
+          </div>
+          <div class="lang-grid">
+            <label class="lang-card {% if profile.language_preference == 'en' or not profile.language_preference %}lang-active{% endif %}">
+              <input type="radio" name="language_preference" value="en"
+                {% if profile.language_preference == 'en' or not profile.language_preference %}checked{% endif %}>
+              <span class="lang-flag">🇬🇧</span>
+              <span class="lang-name">English</span>
+            </label>
+            <label class="lang-card {% if profile.language_preference == 'roman_urdu' %}lang-active{% endif %}">
+              <input type="radio" name="language_preference" value="roman_urdu"
+                {% if profile.language_preference == 'roman_urdu' %}checked{% endif %}>
+              <span class="lang-flag">🇵🇰</span>
+              <span class="lang-name">Roman Urdu</span>
+            </label>
+            <label class="lang-card {% if profile.language_preference == 'ur' %}lang-active{% endif %}">
+              <input type="radio" name="language_preference" value="ur"
+                {% if profile.language_preference == 'ur' %}checked{% endif %}>
+              <span class="lang-flag">🇵🇰</span>
+              <span class="lang-name">اردو</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Save Button -->
+      <div style="text-align:center;margin-top:32px;">
+        <button type="submit" class="btn-save-profile">
+          Save Profile & Update Goals →
+        </button>
+        <br>
+        <a href="/dashboard/"
+          style="font-size:13px;color:#888;text-decoration:none;margin-top:12px;display:inline-block;">
+          Cancel — Go back to Dashboard
+        </a>
+      </div>
+
+    </form>
+
+    <!-- Premium Section -->
+    {% if not request.user.profile.is_premium %}
+    <div style="text-align:center;margin:24px 0;">
+      <a href="/users/pricing/" class="btn-pricing-premium">
+        ⭐ Upgrade to Premium — Rs. 499/month
+      </a>
+    </div>
+    {% else %}
+    <div style="text-align:center;margin:24px 0;padding:14px;background:#e8f5ee;border-radius:12px;">
+      ✨ <strong style="color:#0f4c35;">Premium Member</strong> — Unlimited access active
+      <br>
+      <a href="/users/pricing/" style="font-size:12px;color:#888;text-decoration:none;">
+        Manage subscription →
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.goal-pill input').forEach(input => {
+  input.addEventListener('change', () => {
+    document.querySelectorAll('.goal-pill').forEach(p => p.classList.remove('active'));
+    input.parentElement.classList.add('active');
+  });
+});
+document.querySelectorAll('.lang-card input').forEach(input => {
+  input.addEventListener('change', () => {
+    document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('lang-active'));
+    input.parentElement.classList.add('lang-active');
+  });
+});
+document.querySelectorAll('.condition-card input').forEach(input => {
+  input.addEventListener('change', () => {
+    input.parentElement.classList.toggle('condition-active', input.checked);
+  });
+});
+</script>
+{% endblock %}

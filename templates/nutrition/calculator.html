@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-body{% endblock %}
+{% block title %}BMI & TDEE Calculator — NutriGenix{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+
+  <div class="dash-content">
+
+    <div class="welcome-row">
+      <div>
+        <h1 class="welcome-title">BMI & TDEE Calculator ⚖️</h1>
+        <p class="welcome-sub">Enter your details to calculate your daily calorie needs.</p>
+      </div>
+    </div>
+
+    <div class="calc-layout">
+
+      <!-- FORM CARD -->
+      <div class="calc-form-card">
+        <h2 class="calc-section-title">Your Details</h2>
+
+        <form method="POST" id="calc-form">
+          {% csrf_token %}
+
+          <!-- Age & Gender -->
+          <div class="calc-row">
+            <div class="calc-field">
+              <label class="calc-label">Age</label>
+              <input type="number" name="age" class="calc-input"
+                placeholder="e.g. 25" min="5" max="120"
+                value="{{ profile.age|default:'' }}" required>
+            </div>
+            <div class="calc-field">
+              <label class="calc-label">Gender</label>
+              <select name="gender" class="calc-input">
+                <option value="M" {% if profile.gender == 'M' %}selected{% endif %}>Male</option>
+                <option value="F" {% if profile.gender == 'F' %}selected{% endif %}>Female</option>
+                <option value="O" {% if profile.gender == 'O' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Height & Weight -->
+          <div class="calc-row">
+            <div class="calc-field">
+              <label class="calc-label">Height (cm)</label>
+              <input type="number" name="height_cm" class="calc-input"
+                placeholder="e.g. 165" min="50" max="250" step="0.1"
+                value="{{ profile.height_cm|default:'' }}" required>
+            </div>
+            <div class="calc-field">
+              <label class="calc-label">Weight (kg)</label>
+              <input type="number" name="weight_kg" class="calc-input"
+                placeholder="e.g. 65" min="10" max="300" step="0.1"
+                value="{{ profile.weight_kg|default:'' }}" required>
+            </div>
+          </div>
+
+          <!-- Activity Level -->
+          <div class="calc-field" style="margin-bottom:16px;">
+            <label class="calc-label">Activity Level</label>
+            <select name="activity_level" class="calc-input">
+              <option value="sedentary"   {% if profile.activity_level == 'sedentary'   %}selected{% endif %}>Sedentary (little or no exercise)</option>
+              <option value="light"       {% if profile.activity_level == 'light'       %}selected{% endif %}>Lightly active (1–3 days/week)</option>
+              <option value="moderate"    {% if profile.activity_level == 'moderate'    %}selected{% endif %}>Moderately active (3–5 days/week)</option>
+              <option value="active"      {% if profile.activity_level == 'active'      %}selected{% endif %}>Very active (6–7 days/week)</option>
+              <option value="very_active" {% if profile.activity_level == 'very_active' %}selected{% endif %}>Extra active (physical job)</option>
+            </select>
+          </div>
+
+          <!-- Health Goal -->
+          <div class="calc-field" style="margin-bottom:24px;">
+            <label class="calc-label">Health Goal</label>
+            <div class="goal-pills">
+              <label class="goal-pill {% if profile.health_goal == 'lose' %}active{% endif %}">
+                <input type="radio" name="health_goal" value="lose"
+                  {% if profile.health_goal == 'lose' %}checked{% endif %}>
+                🔻 Lose Weight
+              </label>
+              <label class="goal-pill {% if profile.health_goal == 'maintain' or not profile.health_goal %}active{% endif %}">
+                <input type="radio" name="health_goal" value="maintain"
+                  {% if profile.health_goal == 'maintain' or not profile.health_goal %}checked{% endif %}>
+                ⚖️ Maintain
+              </label>
+              <label class="goal-pill {% if profile.health_goal == 'gain' %}active{% endif %}">
+                <input type="radio" name="health_goal" value="gain"
+                  {% if profile.health_goal == 'gain' %}checked{% endif %}>
+                🔺 Gain Weight
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-calculate">Calculate →</button>
+        </form>
+      </div>
+
+      <!-- RESULTS CARD -->
+      <div class="calc-results-card {% if not result %}results-empty{% endif %}" id="results-card">
+
+        {% if result %}
+        <!-- BMI -->
+        <div class="result-section">
+          <h3 class="result-title">Body Mass Index (BMI)</h3>
+          <div class="bmi-display">
+            <div class="bmi-number">{{ result.bmi }}</div>
+            <div class="bmi-cat-badge bmi-{{ result.bmi_category|lower }}">
+              {{ result.bmi_category }}
+            </div>
+          </div>
+
+          <!-- BMI Scale -->
+          <div class="bmi-scale">
+            <div class="bmi-scale-bar">
+              <div class="bmi-segment seg-under">Underweight<br><18.5</div>
+              <div class="bmi-segment seg-normal">Normal<br>18.5–24.9</div>
+              <div class="bmi-segment seg-over">Overweight<br>25–29.9</div>
+              <div class="bmi-segment seg-obese">Obese<br>>30</div>
+            </div>
+            <div class="bmi-pointer" id="bmi-pointer"></div>
+          </div>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <!-- Calorie breakdown -->
+        <div class="result-section">
+          <h3 class="result-title">Calorie Breakdown</h3>
+          <div class="calorie-cards">
+            <div class="cal-result-card">
+              <div class="cal-result-icon">🔥</div>
+              <div class="cal-result-label">BMR</div>
+              <div class="cal-result-value">{{ result.bmr|floatformat:0 }}</div>
+              <div class="cal-result-sub">kcal/day at rest</div>
+            </div>
+            <div class="cal-result-card highlight-card">
+              <div class="cal-result-icon">⚡</div>
+              <div class="cal-result-label">TDEE</div>
+              <div class="cal-result-value">{{ result.tdee|floatformat:0 }}</div>
+              <div class="cal-result-sub">kcal/day (maintenance)</div>
+            </div>
+            <div class="cal-result-card">
+              <div class="cal-result-icon">🎯</div>
+              <div class="cal-result-label">Your Goal</div>
+              <div class="cal-result-value">{{ result.calorie_goal }}</div>
+              <div class="cal-result-sub">kcal/day target</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <!-- Macros breakdown -->
+        <div class="result-section">
+          <h3 class="result-title">Recommended Macros</h3>
+          {% with goal=result.calorie_goal %}
+          <div class="macro-bars">
+            <div class="macro-row">
+              <span class="macro-name">🥩 Protein</span>
+              <div class="macro-track">
+                <div class="macro-fill protein-fill" style="width:30%"></div>
+              </div>
+              <span class="macro-val">{{ goal|floatformat:0 }} × 30% = <strong>{% widthratio goal 1 0.3 %}g</strong></span>
+            </div>
+            <div class="macro-row">
+              <span class="macro-name">🍚 Carbs</span>
+              <div class="macro-track">
+                <div class="macro-fill carbs-fill" style="width:45%"></div>
+              </div>
+              <span class="macro-val">{{ goal|floatformat:0 }} × 45% = <strong>{% widthratio goal 1 0.45 %}g</strong></span>
+            </div>
+            <div class="macro-row">
+              <span class="macro-name">🥑 Fats</span>
+              <div class="macro-track">
+                <div class="macro-fill fats-fill" style="width:25%"></div>
+              </div>
+              <span class="macro-val">{{ goal|floatformat:0 }} × 25% = <strong>{% widthratio goal 1 0.25 %}g</strong></span>
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+
+        <a href="{% url 'nutrition:dashboard' %}" class="btn-calculate" style="display:block;text-align:center;text-decoration:none;margin-top:24px;">
+          Go to Dashboard →
+        </a>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="empty-results">
+          <div class="empty-icon">⚖️</div>
+          <div class="empty-title">Your results will appear here</div>
+          <div class="empty-sub">Fill in your details and click Calculate to get your personalized BMI, BMR, TDEE and daily calorie goal.</div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Goal pill active state
+document.querySelectorAll('.goal-pill input').forEach(input => {
+  input.addEventListener('change', () => {
+    document.querySelectorAll('.goal-pill').forEach(p => p.classList.remove('active'));
+    input.parentElement.classList.add('active');
+  });
+});
+</script>
+{% endblock %}

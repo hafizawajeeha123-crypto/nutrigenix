@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Register — SehatMand{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-logo">Nutri<span>Genix</span> 🥗</div>
+    <div class="auth-tagline">Create your free account in 2 minutes</div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" placeholder="Select your username" required autofocus>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" name="email" class="form-control" placeholder="email@example.com">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password1" class="form-control" placeholder="Atleast 8 characters" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Confirm your Password</label>
+            <input type="password" name="password2" class="form-control" placeholder="Again enter your password" required>
+        </div>
+        <button type="submit" class="btn-sehat">Create Account →</button>
+    </form>
+
+<div class="auth-switch">
+    Already have an account?
+    <a href="{% url 'users:login' %}">Login</a>
+</div>
+</div>
+{% endblock %}
